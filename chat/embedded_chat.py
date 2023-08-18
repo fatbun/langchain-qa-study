@@ -29,6 +29,9 @@ vectordb = Chroma(embedding_function=embeddings, persist_directory=vector_store_
 
 def convert_history(history):
     # history = [["你好，我叫小明哥", "你好，小明哥！"]], history = [("你好，我叫小明哥", "你好，小明哥！)"]
+    if len(history) == 0:
+        return []
+
     if isinstance(history, list):
         if isinstance(history[0], list):
             history = [tuple(h) for h in history]
