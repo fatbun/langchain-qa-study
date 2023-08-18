@@ -10,7 +10,7 @@ from langchain.llms import ChatGLM
 from langchain.vectorstores import Chroma
 # 文本转换为向量的嵌入引擎
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.chains import RetrievalQA
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 
 import langchain
 
@@ -25,6 +25,16 @@ vector_model_name = "{your vector model dir}"
 embeddings = HuggingFaceEmbeddings(model_name=vector_model_name)
 # 向量化
 vectordb = Chroma(embedding_function=embeddings, persist_directory=vector_store_dir)
+
+
+def convert_history(history):
+    # history = [["你好，我叫小明哥", "你好，小明哥！"]], history = [("你好，我叫小明哥", "你好，小明哥！)"]
+    if isinstance(history, list):
+        if isinstance(history[0], list):
+            history = [tuple(h) for h in history]
+    elif isinstance(history, tuple):
+        history = [history]
+    return history
 
 
 def get_custom_prompt_template(history=[]):
@@ -45,7 +55,7 @@ def get_custom_prompt_template(history=[]):
     )
 
 
-def chat_history(message, history) -> str:
+def chat_history_custom(message, history) -> str:
     PROMPT = get_custom_prompt_template(history)
     chain_type_kwargs = {"prompt": PROMPT}
 
@@ -54,6 +64,13 @@ def chat_history(message, history) -> str:
     qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=vectordb.as_retriever(), chain_type_kwargs=chain_type_kwargs)
 
     return qa.run(query=message, history=history)
+
+
+def chat_history(message, history) -> str:
+    history = convert_history(history)
+    llm = ChatGLM()
+    qa = ConversationalRetrievalChain.from_llm(llm=llm, retriever=vectordb.as_retriever())
+    return qa({"question": message, "chat_history": history})["answer"]
 
 
 def chat(message) -> str:
@@ -65,7 +82,7 @@ def chat(message) -> str:
 
 
 def main():
-    output = chat("我叫什么名字")
+    output = chat_history("请问怎么开单", [["什么是超级车店", "超级车店是一款接车开单、会员管理、库存管理于一身的汽修管理系统"]])
     print(type(output))
     print(output)
 

@@ -5,14 +5,14 @@
 # @Author : Ben Li.
 # @File: chatbot.py
 import gradio as gr
-from embedded_chat import chat
+from embedded_chat import chat, chat_history
 
 
 def random_response(message, history):
     print("Message: ", message)
     print("History: ", history)
 
-    return chat(message)
+    return chat_history(message, history)
 
 
 demo = gr.ChatInterface(random_response)
